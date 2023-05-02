@@ -67,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               maxLines: 1,
                               keyboardType: TextInputType.emailAddress,
                               prefixicon: const Icon(
-                                Icons.drive_file_rename_outline,
+                                Icons.email_outlined,
                                 color: Colors.black,
                               ),
                               controller: auth_provider.email_controller,
@@ -86,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               obscuretext: true,
                               maxLines: 1,
                               prefixicon: const Icon(
-                                Icons.drive_file_rename_outline,
+                                Icons.password_outlined,
                                 color: Colors.black,
                               ),
                               controller: auth_provider.password_controller,
@@ -118,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   }
                                 },
                                 child: auth_provider.loading ?
-                                    CircularProgressIndicator()
+                                    CircularProgressIndicator(color: Colors.white,)
                                     : Text(
                                   "Login",
                                   style: TextStyle(fontSize: 16.0),

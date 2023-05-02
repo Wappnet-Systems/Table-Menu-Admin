@@ -1,9 +1,14 @@
+import 'dart:developer';
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:table_menu_admin/repository/menu_item_repository.dart';
+import '../models/menuItem_model.dart';
+
 
 class MenuProvider with ChangeNotifier {
 
-  //final firestoreService = FireStoreService();
+  final MenuItemRepository _menuItemRepository = MenuItemRepository();
   bool _isEnableNew = false;
   bool _isEnableVeg = false;
   bool _isEnableNonVeg = false;
@@ -13,24 +18,25 @@ class MenuProvider with ChangeNotifier {
   bool _isEnableSweet = false;
   bool _isEnablePopular = false;
 
-  String? _menu_id;
+  int? _menu_id;
   String _menu_name = "";
   String _menu_image = "";
 
   String get menu_image => _menu_image;
-  String _menu_category = "";
+  int _menu_category_id = 0;
   String _menu_ingredients = "";
   int _menu_price = 0;
   String _menu_description = "";
+  String _category_name = "";
   //var uuid = Uuid();
 
   // Getters
   String get menu_name => _menu_name;
-  String get menu_category => _menu_category;
+  int get menu_category_id => _menu_category_id;
   String get menu_ingredients => _menu_ingredients;
   int get menu_price => _menu_price;
   String get menu_description => _menu_description;
-
+  String get category_name => _category_name;
   bool get isEnableNew => _isEnableNew;
 
 
@@ -42,16 +48,17 @@ class MenuProvider with ChangeNotifier {
   bool get isEnableSweet => _isEnableSweet;
   bool get isEnablePopular => _isEnablePopular;
 
+  List<MenuData> _menuitems = [];
+
+  List<MenuData> get menuitems => _menuitems;
+
+
 
 
   // Setters
 
   void setMenuName(String value){
     _menu_name = value;
-    notifyListeners();
-  }
-  void setMenuCategory(String value){
-    _menu_category = value;
     notifyListeners();
   }
   void setMenuIngredients(String value){
@@ -99,76 +106,115 @@ class MenuProvider with ChangeNotifier {
     _isEnablePopular=value;
     notifyListeners();
   }
+  void setCategoryId(int value){
+    _menu_category_id = value;
+    notifyListeners();
+  }
+  void setCategoryName(String value){
+    _category_name = value;
+    notifyListeners();
+  }
 
-  // loadValues(MenuItemModel menuItem){
-  //   _menu_id = menuItem.menuId!;
-  //   _menu_image = menuItem.menuImage!;
-  //   _menu_name = menuItem.menuName!;
-  //   _menu_category = menuItem.menuCateory!;
-  //   _menu_ingredients = menuItem.menuIngredients!;
-  //   _menu_price = menuItem.menuPrice!;
-  //   _menu_description = menuItem.menuDescription!;
-  //   _isEnableNew = menuItem.isEnableNew!;
-  //   _isEnableVeg = menuItem.isEnableVeg!;
-  //   _isEnableNonVeg = menuItem.isEnableNonVeg!;
-  //   _isEnableSpicy = menuItem.isEnableSpicy!;
-  //   _isEnableJain = menuItem.isEnableJain!;
-  //   _isEnableSpecial = menuItem.isEnableSpecial!;
-  //   _isEnableSweet = menuItem.isEnableSweet!;
-  //   _isEnablePopular = menuItem.isEnablePopular!;
-  // }
+  loadValues(MenuData menuItem){
+    _menu_id = menuItem.id;
+    _menu_image = menuItem.image_url!;
+    _menu_name = menuItem.name!;
+    _menu_ingredients = menuItem.ingredients!;
+    _menu_price = int.parse(menuItem.price!);
+    _menu_description = menuItem.description!;
+    _isEnableNew = menuItem.isNew!;
+    _isEnableVeg = menuItem.isVeg!;
+    _isEnableNonVeg = menuItem.isNonVeg!;
+    _isEnableSpicy = menuItem.isSpicy!;
+    _isEnableJain = menuItem.isJain!;
+    _isEnableSpecial = menuItem.isSpecial!;
+    _isEnableSweet = menuItem.isSweet!;
+    _isEnablePopular = menuItem.isPopular!;
+  }
+
+  Future<List<MenuData>> getMenuItems() async {
+    var response = await _menuItemRepository.getMenuItems();
+    if (response != null) {
+      if (response.statusCode == 200) {
+        var result = response.data;
+        //print(result);
+
+        var getMenuItem = MenuItemModel.fromJson(response.data);
+
+        if (getMenuItem.menuData!.isNotEmpty) {
+          var addedIds = Set<int>();
+          _menuitems.clear();
+          _menuitems.addAll(getMenuItem.menuData!);
+          log("categoryList:${_menuitems.length}");
+          getMenuItem.menuData!.forEach((data) {
+            // Check if category already exists
+            if (!addedIds.contains(data.id)) {
+              // categoryList.add(GetCategory(data: [data]));
+              addedIds.add(data.id!); // Add categoryId to Set
+            }
+          });
+
+          print('###$_menuitems');
+          return _menuitems;
+        }
+      } else {}
+    }
+    // Return an empty list if there was an error
+    return [];
+  }
 
 
-  // saveMenuItem() async {
-  //     // first time
-  //     var newMenuItem =
-  //     MenuItemModel(
-  //       createdAt: DateTime.now().toString(),
-  //       menuId: uuid.v4(),
-  //       menuImage:  await firestoreService.addMenuItemImage(_temp_image!),
-  //       menuName: menu_name,
-  //       menuCateory: menu_category,
-  //       menuIngredients: menu_ingredients,
-  //       menuPrice: menu_price,
-  //       menuDescription: menu_description,
-  //       isEnableNew: isEnableNew,
-  //       isEnableVeg: isEnableVeg,
-  //       isEnableNonVeg: isEnableNonVeg,
-  //       isEnableSpicy: isEnableSpicy,
-  //       isEnableJain: isEnableJain,
-  //       isEnableSpecial: isEnableSpecial,
-  //       isEnableSweet: isEnableSweet,
-  //       isEnablePopular: isEnablePopular
-  //     );
-  //     firestoreService.saveMenuItem(newMenuItem);
-  // }
+  saveMenuItem() async {
+    var menuData = MenuData(
+      name: menu_name,
+      description: menu_description,
+      image: await MultipartFile.fromFile(temp_image!.path),
+      price: menu_price.toString(),
+      ingredients: menu_ingredients,
+      category_id: menu_category_id,
+      category_name: category_name,
+      isJain: isEnableJain,
+      isVeg: isEnableVeg,
+      isNew: isEnableNew,
+      isNonVeg: isEnableNonVeg,
+      isPopular: isEnablePopular,
+      isSpecial: isEnableSpecial,
+      isSpicy: isEnableSpicy,
+      isSweet: isEnableSweet
+    );
+    FormData formData = menuData.toFormData();
+    await _menuItemRepository.saveMenuItem(formData);
+    notifyListeners();
+  }
 
-  // updateMenuItem() async {
-  //   var updatedMenuItem =
-  //   MenuItemModel(
-  //     createdAt: DateTime.now().toString(),
-  //       menuId: _menu_id,
-  //       menuImage:  _menu_id,
-  //       menuName: menu_name,
-  //       menuCateory: menu_category,
-  //       menuIngredients: menu_ingredients,
-  //       menuPrice: menu_price,
-  //       menuDescription: menu_description,
-  //       isEnableNew: isEnableNew,
-  //       isEnableVeg: isEnableVeg,
-  //       isEnableNonVeg: isEnableNonVeg,
-  //       isEnableSpicy: isEnableSpicy,
-  //       isEnableJain: isEnableJain,
-  //       isEnableSpecial: isEnableSpecial,
-  //       isEnableSweet: isEnableSweet,
-  //       isEnablePopular: isEnablePopular
-  //   );
-  //   firestoreService.updateMenuItem(updatedMenuItem, _menu_id!);
-  // }
+  updateMenuItem(int id) async {
+    var menuData = MenuData(
+        name: _menu_name,
+        description: _menu_description,
+        image: _temp_image != null ? await MultipartFile.fromFile(_temp_image!.path) : null,
+        price: _menu_price.toString(),
+        ingredients: _menu_ingredients,
+        category_id: _menu_category_id,
+        category_name: _category_name,
+        isJain: _isEnableJain,
+        isVeg: _isEnableVeg,
+        isNew: _isEnableNew,
+        isNonVeg: _isEnableNonVeg,
+        isPopular: _isEnablePopular,
+        isSpecial: _isEnableSpecial,
+        isSpicy: _isEnableSpicy,
+        isSweet: _isEnableSweet
+    );
+    FormData formData = menuData.toFormData();
+     _menuItemRepository.updateMenuItem(formData,id);
+     notifyListeners();
+  }
 
-  // removeMenuItem(String menuId){
-  //   firestoreService.removeMenuItem(menuId);
-  // }
+  removeMenuItem(int id) async{
+    await _menuItemRepository.deleteMenuItem(id);
+    _menuitems.removeWhere((menuitem) => menuitem.id == id);
+    notifyListeners();
+  }
 
   File? _temp_image;
   get temp_image => _temp_image;

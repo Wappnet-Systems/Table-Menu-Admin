@@ -1,30 +1,25 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'dart:io';
 
-import '../view_model/auth_provider.dart';
-import 'login_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:table_menu_admin/view/login_screen.dart';
+
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final auth_provider = Provider.of<AuthProvider>(context, listen: false);
     return Scaffold(
       body: SafeArea(
         child: Center(
-          // child:  IconButton(
-          //   // onPressed: (){
-          //   //   auth_provider.signOut().then(
-          //   //         (value) => Navigator.push(
-          //   //       context,
-          //   //       MaterialPageRoute(
-          //   //         builder: (context) => LoginScreen(),
-          //   //       ),
-          //   //     ),
-          //   //   );
-          //   // },
-          //   icon:const Icon(Icons.exit_to_app),
-          // ),
+          child:  IconButton(
+            onPressed: () async {
+              SharedPreferences preferences = await SharedPreferences.getInstance();
+              await preferences.remove('token');
+              exit(0);
+            },
+            icon:const Icon(Icons.exit_to_app),
+          ),
         ),
       ),
     );

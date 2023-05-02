@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:table_menu_admin/models/category_model.dart';
+import 'package:table_menu_admin/res/services/api_endpoints.dart';
 import 'package:table_menu_admin/view/select_photo_options_screen.dart';
 
 import '../utils/widgets/custom_button.dart';
@@ -11,7 +12,7 @@ import '../utils/widgets/custom_textformfield.dart';
 import '../view_model/menu_category_provider.dart';
 
 class AddCategoryScreen extends StatefulWidget {
-  final CategoryModel? category;
+  final Data? category;
 
   AddCategoryScreen([this.category]);
 
@@ -66,6 +67,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
   final name_controller_category = TextEditingController();
   final description_controller_category = TextEditingController();
   String image_url = "";
+  int category_id = 0;
 
   @override
   void dispose() {
@@ -86,10 +88,11 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
       });
     } else {
       // existing record update
+      category_id = widget.category!.categoryId!;
       name_controller_category.text = widget.category!.categoryName!;
       description_controller_category.text =
-          widget.category!.categoryDescription!;
-      image_url = widget.category!.categoryImage!.toString();
+          widget.category!.description!;
+      image_url = ApiEndPoint.baseImageUrl + widget.category!.categoryImg!.toString();
       //State Update
       Future.delayed(Duration.zero, () {
         final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
@@ -164,7 +167,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                                     shape: BoxShape.rectangle,
                                   ),
                                   child: Center(
-                                    child: categoryProvider.temp_image == null
+                                    child: categoryProvider.temp_image != null
                                         ? Column(
                                             children: [
                                               const SizedBox(
@@ -185,7 +188,7 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                                             ],
                                           )
                                         : CircleAvatar(
-                                            backgroundImage: widget.category == null ? FileImage(categoryProvider.temp_image) : NetworkImage(image_url) as ImageProvider,
+                                            backgroundImage: widget.category?.categoryImg == null ? FileImage(categoryProvider.temp_image) : NetworkImage(image_url) as ImageProvider,
                                             radius: 200,
                                           ),
                                   )
@@ -277,8 +280,8 @@ class _AddCategoryScreenState extends State<AddCategoryScreen> {
                                 width: double.infinity,
                                 child: CustomButton(
                                   onPressed: () {
-                                    // categoryProvider.removeCategory(
-                                    //     widget.category!.!);
+                                    categoryProvider.removeCategory(
+                                        widget.category!.categoryId!);
                                     Navigator.of(context).pop();
                                   },
                                   child: const Text(

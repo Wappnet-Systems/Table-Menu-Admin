@@ -1,21 +1,25 @@
+import 'dart:developer';
 import 'dart:io';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:table_menu_admin/res/services/api_endpoints.dart';
 import 'package:table_menu_admin/view/select_photo_options_screen.dart';
 import '../models/category_model.dart';
 import '../models/menuItem_model.dart';
 import '../utils/widgets/custom_button.dart';
 import '../utils/widgets/custom_textformfield.dart';
+import '../view_model/menu_category_provider.dart';
 import '../view_model/menu_provider.dart';
 
 class AddMenuItemsScreen extends StatefulWidget {
 
-  final MenuItemModel? menuItemModel;
+  final MenuData? menuItemModel;
+  final int? index;
 
-  AddMenuItemsScreen([this.menuItemModel]);
+  AddMenuItemsScreen([this.menuItemModel, this.index]);
 
   @override
   State<AddMenuItemsScreen> createState() => _AddMenuItemsScreenState();
@@ -81,24 +85,23 @@ class _AddMenuItemsScreenState extends State<AddMenuItemsScreen> {
       description_controller.text = "";
       ingredients_controller.text = "";
       price_controller.text = "";
-      new Future.delayed(Duration.zero , (){
-        final menuProvider = Provider.of(context,listen: false);
-        menuProvider.loadValues(MenuItemModel());
-      });
+      // new Future.delayed(Duration.zero , (){
+      //   final menuProvider = Provider.of(context,listen: false);
+      //   menuProvider.loadValues(MenuItemModel());
+      // });
     } else{
       // existing record update
-      name_controller.text = widget.menuItemModel!.menuName!;
-      description_controller.text = widget.menuItemModel!.menuDescription!;
-      ingredients_controller.text = widget.menuItemModel!.menuIngredients!;
-      price_controller.text = widget.menuItemModel!.menuPrice!.toString();
-      image_url = widget.menuItemModel!.menuImage!;
+      name_controller.text = widget.menuItemModel!.name!;
+      description_controller.text = widget.menuItemModel!.description!;
+      ingredients_controller.text = widget.menuItemModel!.ingredients!;
+      price_controller.text = widget.menuItemModel!.price.toString();
+      image_url = widget.menuItemModel!.image_url!;
       //State Update
       new Future.delayed(Duration.zero, () {
         final menuProvider = Provider.of<MenuProvider>(context,listen: false);
-        //menuProvider.loadValues(widget.menuItemModel!);
+        menuProvider.loadValues(widget.menuItemModel!);
       });
     }
-   // final FirebaseFirestore _db = FirebaseFirestore.instance;
 
     
     super.initState();
@@ -107,6 +110,7 @@ class _AddMenuItemsScreenState extends State<AddMenuItemsScreen> {
   @override
   Widget build(BuildContext context) {
     final menu_provider = Provider.of<MenuProvider>(context, listen: true);
+    final category_provider = Provider.of<CategoryProvider>(context);
     return Scaffold(
       body: SafeArea(
         child: Container(
@@ -168,28 +172,29 @@ class _AddMenuItemsScreenState extends State<AddMenuItemsScreen> {
                                     shape: BoxShape.rectangle,
                                   ),
                                   child: Center(
-                                    child: menu_provider.temp_image == null
-                                        ? Column(
-                                            children: [
-                                              const SizedBox(
-                                                height: 20,
-                                              ),
-                                              Image.asset(
-                                                "assets/images/select_image.png",
-                                                height: 100,
-                                                width: 100,
-                                              ),
-                                              const Text(
-                                                "Upload Image",
-                                                style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                            ],
-                                          )
-                                        : CircleAvatar(
-                                            backgroundImage: widget.menuItemModel == null ? FileImage(menu_provider.temp_image) : NetworkImage(image_url) as ImageProvider,
+                                    child:  widget.menuItemModel == null ?
+                                    Column(
+                                      children: [
+                                        const SizedBox(
+                                          height: 20,
+                                        ),
+                                        Image.asset(
+                                          "assets/images/select_image.png",
+                                          height: 100,
+                                          width: 100,
+                                        ),
+                                        const Text(
+                                          "Upload Image",
+                                          style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight:
+                                              FontWeight.bold),
+                                        ),
+                                      ],
+                                    )
+                                        :
+                                    CircleAvatar(
+                                            backgroundImage: NetworkImage(ApiEndPoint.baseImageUrl + image_url) as ImageProvider,
                                             radius: 200,
                                           ),
                                   )
@@ -229,54 +234,62 @@ class _AddMenuItemsScreenState extends State<AddMenuItemsScreen> {
                         const SizedBox(
                           height: 20,
                         ),
-                        // StreamProvider(
-                        //   create: (context) => FireStoreService().getCategories(),
-                        //   initialData: null,
-                        //   child: Consumer<List<CategoryModel>?>(
-                        //     builder: (_, categories, __) {
-                        //       return DropdownButtonFormField2(
-                        //         validator: (value) {
-                        //           if (value!.isEmpty) {
-                        //             return "Category Field is Required";
-                        //           }
-                        //         },
-                        //         decoration: const InputDecoration(
-                        //             labelText: "Category",
-                        //             hintText: "Choose Category",
-                        //             prefixIcon: Icon(
-                        //               Icons.category_outlined,
-                        //               color: Colors.black,
-                        //             ),
-                        //             border: OutlineInputBorder(
-                        //                 borderSide:
-                        //                 BorderSide(width: 3, color: Colors.black),
-                        //                 borderRadius:
-                        //                 BorderRadius.all(Radius.circular(25))),
-                        //             // This is the error border
-                        //             errorBorder: OutlineInputBorder(
-                        //                 borderSide:
-                        //                 BorderSide(color: Colors.red, width: 5))),
-                        //         items: List.generate(categories!.length, (index) => categories[index].categoryName)
-                        //             .map((item) => DropdownMenuItem<String>(
-                        //           value: item,
-                        //           child: Text(
-                        //             item!,
-                        //             style: const TextStyle(
-                        //               fontSize: 16,
-                        //               color: Colors.black,
-                        //             ),
-                        //             overflow: TextOverflow.ellipsis,
-                        //           ),
-                        //         ))
-                        //             .toList(),
-                        //         value: selectedValue,
-                        //         onChanged: (value) {
-                        //           menu_provider.setMenuCategory(value!);
-                        //         },
-                        //       );
-                        //     },
-                        //   ),
-                        // ),
+                        StreamBuilder(
+                          stream: category_provider.getCategories().asStream(),
+                            builder: (context, snapshot) {
+                            if(snapshot.hasData){
+                              List<Data>? categories = snapshot.data;
+                              return DropdownButtonFormField2(
+                                validator: (value) {
+                                  if (value!.isEmpty) {
+                                    return "Category Field is Required";
+                                  }
+                                },
+                                decoration: const InputDecoration(
+                                    labelText: "Category",
+                                    hintText: "Choose Category",
+                                    prefixIcon: Icon(
+                                      Icons.category_outlined,
+                                      color: Colors.black,
+                                    ),
+                                    border: OutlineInputBorder(
+                                        borderSide:
+                                        BorderSide(width: 3, color: Colors.black),
+                                        borderRadius:
+                                        BorderRadius.all(Radius.circular(25))),
+                                    // This is the error border
+                                    errorBorder: OutlineInputBorder(
+                                        borderSide:
+                                        BorderSide(color: Colors.red, width: 5))),
+                                items: List.generate(categories!.length, (index) => categories[index].categoryName )
+                                    .map((item) => DropdownMenuItem<String>(
+                                  value: item,
+                                  child: Text(
+                                    item!,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.black,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ))
+                                    .toList(),
+                                value: selectedValue,
+                                onChanged: (value) {
+                                  category_provider.setcategoryName(value!);
+                                    List.generate(categories.length,
+                                            (index){
+                                              if(categories[index].categoryName == value){
+                                                log("category id :${categories[index].categoryId}");
+                                                menu_provider.setCategoryId(categories[index].categoryId!);
+                                              }
+                                            });
+                                },
+                              );
+                            }
+                            return Container();
+                            }
+                        ),
                         const SizedBox(
                           height: 20,
                         ),
@@ -305,9 +318,10 @@ class _AddMenuItemsScreenState extends State<AddMenuItemsScreen> {
                         CustomTextFormField().getCustomEditTextArea(
                             labelValue: "Price",
                             hintValue: "Enter Price",
-                            onchanged: (value) {
-                              menu_provider.setMenuPrice(value);
-                            },
+                          onchanged: (value) {
+                              int a = int.parse(value);
+                            menu_provider.setMenuPrice(a);
+                          },
                           obscuretext: false,
                           maxLines: 1,
                             prefixicon: const Icon(
@@ -518,10 +532,10 @@ class _AddMenuItemsScreenState extends State<AddMenuItemsScreen> {
                           width: double.infinity,
                           child: CustomButton(onPressed: () {
                        if (_formKey_add_menuitem.currentState!.validate()) {
-                         if(widget.menuItemModel == null){
-                           //menu_provider.saveMenuItem();
+                         if(widget.menuItemModel?.name == null){
+                           menu_provider.saveMenuItem();
                          }else {
-                           //menu_provider.updateMenuItem();
+                           menu_provider.updateMenuItem(widget.menuItemModel!.id!);
                          }
                          Navigator.of(context).pop();
                        }
@@ -532,7 +546,7 @@ class _AddMenuItemsScreenState extends State<AddMenuItemsScreen> {
                           height: 50,
                           width: double.infinity,
                           child: CustomButton(onPressed: () {
-                            //menu_provider.removeMenuItem(widget.menuItemModel!.menuId!);
+                            menu_provider.removeMenuItem(widget.menuItemModel!.id!);
                             Navigator.of(context).pop();
                           }, child: const Text("Delete", style: TextStyle(fontSize: 16.0),),),
                         ): Container(),
